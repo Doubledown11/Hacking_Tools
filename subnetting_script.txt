@@ -1,0 +1,583 @@
+"""
+The Subnetting Script I used when studying for my CCNA by Doubledown11!
+
+A script that shows all the steps I engage in when practicing subnetting questions.
+
+Currently, this script is not programmed to be functional with IPV6.
+
+"""
+import time
+
+
+def welcome():
+    """
+    Displays a welcome message to the console.
+    """
+    welcome_banner = "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    for char in welcome_banner:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+    print("\n")
+
+    welcome_msg = "Welcome to the subnetting script. Enjoy your stay."
+    for char in welcome_msg:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+    print("\n")
+
+    for char in welcome_banner:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+    print("\n\n")
+
+
+def get_addr():
+    """
+    Receives input from user regarding the IP address
+    and subnet mask to show all subnetting information for.
+    """
+
+    # Validate input. Ensure address is of right length, and type.
+    # Make sure every 8 chars there is a period.
+
+    # Ask for address type. (Hex, dec, bin)
+    print("IP addresses can be either IPv4, or IPv6. \n")
+    print("Currently, this program only works with IPv4 addresses.")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+   
+   ##########################Insert Addr type check here 
+   ##########################
+    
+    while True:
+        try:
+            addr = input("What IPv4 address would you like to subnet?: ")
+
+            # Write code to check if length of each byte in the address is not longer than 3 digits.
+            for x in range(len(addr)):
+                if addr[x].isalpha():
+                    raise Exception('IPv4 address should not contain any letters.',
+                                    'An IPv4 address consists of a collection of 4 bytes, ',
+                                    'each with 8 bits, separated by periods.',
+                                    'EX) 192.168.10.10')
+
+            if '.' not in addr:
+                raise Exception('IPv4 address does not contain any periods.',
+                                'An IPv4 address consists of a collection of 4 bytes, ',
+                                'each with 8 bits, separated by periods.',
+                                'EX) 192.168.10.10')
+
+            for x in range(len(addr)):
+                if x in [7, 15, 23] and addr[x] != '.':
+                    raise Exception('IPv4 address has improper period placement.',
+                                    'An IPv4 address consists of a collection of 4 bytes, ',
+                                    'each with 8 bits, separated by periods.',
+                                    'EX) 192.168.10.10')
+
+            else:
+                break
+
+        except ValueError as ve:
+            print(f'Invalid Input: {ve}')
+
+    print('\n')
+    print("What else have you been given? (subnet mask, CIDR) ")
+
+    while True:
+        try:
+            info = input("Type mask for subnet mask, or cidr for CIDR:? ").lower()
+
+            # Break loop if input is found to be valid.
+            if info == "mask" or info == "cidr":
+                break
+
+            # If invalid raise an exception.
+            else:
+                raise ValueError("Input must be either: mask OR cidr")
+
+        except ValueError as ve:
+            print("Invalid input:", ve)
+
+    print("Please wait...\n\n")
+    time.sleep(2)
+
+    if info == "mask":
+        while True:
+            subnet_mask = input("What is your subnet mask for the given IP addr?: ")
+            print('\n')
+            if len(subnet_mask) == len(addr):
+                return [addr, subnet_mask]
+
+    elif info == "cidr":
+        while True:
+            try:
+                cidr = input("What is the CIDR for the given IP addr? (Enter CIDR as '/32'): ")
+                print('\n')
+                if type(cidr) != str or cidr[0] != '/':
+                    raise Exception('The CIDR value entered must be a string that has a / followed by a number.\n')
+                elif len(cidr) > 3:
+                    raise Exception('The given CIDR value is too long. An IPv4 address only has 32 bits.\n')
+                elif cidr.count('/') > 1:
+                    raise Exception('A CIDR value only needs one slash (/) character. \n')
+                elif cidr.count(' ') > 0:
+                    raise Exception('A CIDR value must not contain any spaces.\n')
+                else:
+                    return [addr, cidr]
+
+            except Exception as e:
+                print(f"An error occurred: {e}\n")
+
+
+def bin2decimal_converter(bin_addr):
+    """
+    Converts an address in binary format into its dotted decimal form.
+    """
+
+    binary_decoder = [128, 64, 32, 16, 8, 4, 2, 1]
+    bin_addr = bin_addr.split(".")
+    new_addr = ''
+
+    for byte in range(len(bin_addr)):
+        if bin_addr[byte] == '11111111':
+            new_addr += '255.'
+            pass
+
+        elif bin_addr[byte] == '00000000':
+            new_addr += '0.'
+            pass
+
+        # For bytes that aren't 255 or 0, we will need to reverse the decimal2bin
+        # steps used to convert decimal into binary.
+        else:
+            # Collect indexes of activated bits in the binary address.
+            positions = []
+            for char in range(len(bin_addr[byte])):
+                if bin_addr[byte][char] == "1":
+                    positions.append(char)
+
+            # Use indexes to add up to dotted-decimal form,
+            # based off of the binary_decoder.
+            # Example: 1010100 --> 168.
+            new_byte = 0
+
+            for x in positions:
+                for y in range(len(binary_decoder)):
+                    if y == x:
+                        new_byte += binary_decoder[y]
+
+                    else:
+                        continue
+
+            new_addr += str(new_byte)
+            new_addr += "."
+    new_addr = new_addr[:-1]
+
+    return new_addr
+
+
+# If given a CIDR, convert to a subnet mask in dotted-decimal.
+def cidr2binmask_converter(cidr):
+    """
+    Converts cidr to dotted-decimal format.
+    """
+
+    cidr = int(cidr.strip("/"))
+    # Above value is now number of activated bits in binary version of subnet mask.
+    remainder = 32 - cidr
+
+    fin_bin_mask = []
+    for x in range(cidr):
+        fin_bin_mask.append(1)
+
+    for y in range(remainder):
+        fin_bin_mask.append(0)
+
+    # Below code is supposed to iterate through the list of binary values (0 or 1)
+    # At every 8 digits (end of byte) we must add a decimal to signify end of byte.
+    # I will later study the more efficient methods.
+    #       Look up list comprehension.
+
+    new_mask = ''
+    for x in range(len(fin_bin_mask)):
+        if x < 8:
+            new_mask += str(fin_bin_mask[x])
+
+        elif x == 8:
+            new_mask += '.'
+            new_mask += str(fin_bin_mask[x])
+
+        elif 16 > x > 8:
+            new_mask += str(fin_bin_mask[x])
+
+        elif x == 16:
+            new_mask += '.'
+            new_mask += str(fin_bin_mask[x])
+
+        elif 24 > x > 16:
+            new_mask += str(fin_bin_mask[x])
+
+        elif x == 24:
+            new_mask += '.'
+            new_mask += str(fin_bin_mask[x])
+
+        elif 32 > x > 24:
+            new_mask += str(fin_bin_mask[x])
+
+        else:
+            new_mask += ''
+
+    return new_mask
+
+
+# Convert dotted-decimal to binary. (IP and subnet mask)
+def decimal2binary_converter(ip_addr):
+    """
+    Converts a given ip address/subnet mask in dotted-decimal into binary format.
+
+    CURRENT FUNCTION TO FINISH.
+    """
+
+    binary_decoder = [128, 64, 32, 16, 8, 4, 2, 1]
+
+    ip_addr = ip_addr.split('.')
+
+    binary_ip_addr = []
+    for byte in range(len(ip_addr)):
+        current_byte = ip_addr[byte]
+        current_byte = int(current_byte)
+        current_byte_binary = []
+
+        for value in binary_decoder:
+            if current_byte >= value:
+                current_byte_binary.append(1)
+                current_byte -= value
+
+            else:
+                current_byte_binary.append(0)
+
+        # Convert the result list to a string
+        binary_string = ''.join(map(str, current_byte_binary))
+        binary_ip_addr.append(binary_string)
+
+    binary_ip_addr = '.'.join(binary_ip_addr)
+
+    return binary_ip_addr
+
+
+def append_zeros(ip_addr):
+    """
+    Finishes the creation of the network ID by appending the missing zero's or missing bytes to the IP address list.
+    """
+
+    ip_addr = ip_addr.split(".")
+
+    # Check missing bytes
+    if range(len(ip_addr)) != 4:
+        num_miss_byte = 4 - len(ip_addr)
+        zero_string_byte = '00000000'
+
+        for x in range(num_miss_byte):
+            ip_addr.append(zero_string_byte)
+
+    # Check incomplete bytes (for non /8, /16, /24 CIDRs)
+    for byte in range(len(ip_addr)):
+        if len(ip_addr[byte]) != 8:
+            val = 8 - len(ip_addr[byte])
+            zero_string = "0" * val
+            ip_addr[byte] += zero_string
+
+    return ip_addr
+
+
+def count_bits(binary_subnet_mask):
+    """
+    Counts the number of consecutive 1's in the binary subnet_mask.
+    This value will be used as a position value on which to split the binary IP address into its network ID piece.
+    """
+
+    count = 0
+    for byte in range(len(binary_subnet_mask)):
+        if binary_subnet_mask[byte] == '11111111' or binary_subnet_mask[byte] == '00000000':
+            pass
+        for digit in range(len(binary_subnet_mask[byte])):
+            # Count the number of activated bits in the final network byte of the subnet mask.
+            # This value will be used to determine the amount of non-changed bits in the binary IP address.
+            if binary_subnet_mask[byte][digit] == '1':
+                count +=1
+
+    count = 0
+    for x in range(len(binary_subnet_mask)):
+        for y in range(len(binary_subnet_mask[x])):
+            for z in range(len(binary_subnet_mask[x][y])):
+                if binary_subnet_mask[x][y][z] == '1':
+                    # Counts the number of consecutive 1's in the binary subnet_mask.
+                    # This value will be used as a position value on which to split the binary IP address.
+                    count +=1
+
+                else:
+                    break
+
+    return count
+
+
+def cut_address(address, count):
+    """
+    Cuts the address at the location specified by the subnet masks number of masked bits.
+    """
+
+    # Now cut IP address at location determined by activated subnet binary values.
+    new_addr = ''
+
+    limit_reached = False  # Limit number of digits to copy.
+    while limit_reached is False:
+        counter = 0
+        for byte in range(len(address)):
+            for y in range(len(address[byte])):
+                if counter >= count:
+                    limit_reached = True
+                elif counter == 7 or counter == 15 or counter == 24:
+                    new_addr += '.'
+                    counter += 1
+                else:
+                    new_addr += str(address[byte][y])
+                    counter += 1
+
+    return new_addr
+
+
+def box_display(cut_net_addr, cut_subnet_mask):
+    """
+    Shows the addresses before and after being cut to form the network address.
+    """
+
+    time.sleep(2)
+    banner = '~~~~~~~~~ ~~~~~~~~~ ~~~~~~~~ \n'
+
+    # Move below animation box display to another function.
+    print('Based off of the number of bits, the addresses should be cut like below to form the network address.\n\n')
+
+    for char in banner:
+        print(char, end='', flush=True)
+        time.sleep(0.05)
+
+    print(cut_subnet_mask)
+    print(cut_net_addr)
+
+    for char in banner:
+        print(char, end='', flush=True)
+        time.sleep(0.05)
+    print('\n')
+
+    print('Now we append zeros to the end of the cut IP address until a bit count of 32 is reached.')
+    print('At that point, we have our network ID.')
+
+
+def compare_bin_ip2mask(binary_ip_addr, binary_subnet_mask):
+    """
+    Compares the binary versions of IP and the subnet mask to determine the networks ID.
+    Copies the method used on paper, whereby the range of activated bits in the subnet mask
+    dictate the range of unchanged bits from the IP in the N_ID.
+
+    Returns the Network ID of the given network.
+    """
+
+    binary_ip_addr = binary_ip_addr.split('.')
+    binary_subnet_mask = binary_subnet_mask.split('.')
+
+    print('\n\n\n')
+    print("The binary versions of both the IP address and Subnet mask will be shown below contained within a box.")
+    print('\n')
+    time.sleep(5)
+
+    banner = '~~~~~~~~~ ~~~~~~~~~ ~~~~~~~~ ~~~~~~~~ ~~~~~~~~~~\n'
+    for char in banner:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+
+    print(binary_subnet_mask)
+    print(binary_ip_addr)
+
+    for char in banner:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+    print('\n')
+
+    print("To form the network address, we must cut the IP address where the subnet address's activated bits stop.\n")
+    time.sleep(2)
+    count = int(count_bits(binary_subnet_mask))
+
+    cut_net_address = cut_address(binary_ip_addr, count)
+    cut_subnet_mask = cut_address(binary_subnet_mask, count)
+
+    box_display(cut_net_address, cut_subnet_mask)
+
+    # Code below runs the cut IP address into append_zeros() which adds the missing zeros back onto the IP address.
+    network_address = append_zeros(cut_net_address)
+    network_address = ".".join(network_address)
+
+    return network_address
+
+
+def number_hosts_per_subnet(cidr):
+    """
+    Calculates the number of hosts per subnet allowed.
+
+    Calc number host per subnet ==  2 ^ (32 - CIDR_VALUE) - 2
+    """
+
+    cidr = cidr.strip('/')
+    return pow(2, (32-int(cidr))) - 2
+
+
+def number_subnets(binary_subnet_mask):
+    """
+    Calculates the number of sub-networks as specified by the subnet mask.
+
+    Calc number of nets == 2^(last byte mask on) -2
+    """
+
+    binary_subnet_mask = binary_subnet_mask.split(".")
+    count = 0
+
+    # Iterate through binary subnet mask, count the number of consecutive activated masked bits.
+    # If there is no byte besides '1111111' or '0000000', we continue.
+
+    for byte in range(len(binary_subnet_mask)):
+        if binary_subnet_mask[byte] == '11111111' or binary_subnet_mask[byte] == '00000000':
+            continue
+
+        else:
+            for char in range(len(binary_subnet_mask[byte])):
+                if binary_subnet_mask[byte][char] == '1':
+                    count +=1
+
+    subnet_count = pow(2, count) - 2
+
+    if subnet_count == -1:
+        subnet_count +=2
+        return subnet_count
+
+    else:
+        return subnet_count
+
+
+def calc_ranges(decimal_subnet_mask):
+    """
+    Calculates the ranges of addresses each subnet holds according to the subnet mask and IP.
+    """
+
+    decimal_subnet_mask = decimal_subnet_mask.split('.')
+    final_byte_subnet_mask = decimal_subnet_mask[-1]
+
+    total_range = 256 - int(final_byte_subnet_mask)
+
+    return total_range
+
+
+def cidr_frm_subnet_mask(binary_subnet_mask):
+    """
+    Count the number of 1s in the subnet mask address, and use that value as the cidr.
+    """
+
+    binary_subnet_mask = binary_subnet_mask.split('.')
+
+    count = 0
+    for x in range(len(binary_subnet_mask)):
+        for y in range(len(binary_subnet_mask[x])):
+            if binary_subnet_mask[x][y] == "1":
+                count +=1
+
+    cidr = "/"+str(count)
+    return cidr
+
+
+def main():
+    """
+    Main Function.
+
+    To-Do:
+    Write exceptions validating input on every input() function.
+
+    NOTES:
+    Add case for subnets in class (subnet 64?, subnet 128?) something special about subnets in the book.
+    """
+
+    welcome()
+    ip_addr = get_addr()
+
+    # IF len of ip_addr[1] is greater than length of a CIDR, then we
+    if len(ip_addr[1]) > len('/32'):
+        binary_subnet_mask = decimal2binary_converter(ip_addr[1])
+        decimal_subnet_mask = ip_addr[0]
+
+    else:
+        binary_subnet_mask = cidr2binmask_converter(ip_addr[1])
+        decimal_subnet_mask = bin2decimal_converter(binary_subnet_mask)
+
+    binary_ip_addr = decimal2binary_converter(ip_addr[0])
+
+    decimal_subnet_mask = bin2decimal_converter(binary_subnet_mask)
+
+    # Now I want to compare binary versions of IP and subnet mask,
+    # to determine the network's ID.
+    network_address = compare_bin_ip2mask(binary_ip_addr, binary_subnet_mask)
+
+    network_address = bin2decimal_converter(network_address)
+
+    cidr = cidr_frm_subnet_mask(binary_subnet_mask)
+
+    print('\n\n')
+    output_section = "############ OUTPUT SECTION ###############"
+    for char in output_section:
+        print(char, end='', flush=True)
+        time.sleep(0.005)
+    print('\n')
+
+    print("Please wait a moment as the rest of your information is gathered for you. ")
+    banner = "~~~~~~~~~~~~~"
+    for char in banner:
+        print(char, end='', flush=True)
+        time.sleep(0.5)
+    print('\n\n')
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"The IP address of {ip_addr[0]} in binary form is {binary_ip_addr}!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"The Network ID of this network with the given subnet mask is {network_address}!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"The subnet mask of {decimal_subnet_mask} in binary form is {binary_subnet_mask}!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"This subnet mask would yield a CIDR value of: {cidr}!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    number_of_subnets = number_subnets(binary_subnet_mask)        # MATH WRONG HERE FIX
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"This subnet mask allows for {number_of_subnets} subnets!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    # Determine the number of allowable hosts per subnet.
+    number_hosts = number_hosts_per_subnet(cidr)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"The IP address given, with the subnet mask specified, will allow for {number_hosts} hosts per subnet!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    # Calculate the subnet ranges.
+    subnet_range = calc_ranges(decimal_subnet_mask)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"Including the Net_ID and Broadcast_ID, each subnet has a range of {subnet_range}!")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    goodbye_message = "The subnetting script is over, please come back soon!"
+    for char in goodbye_message:
+        print(char, end='', flush=True)
+        time.sleep(0.09)
+
+
+if __name__ == "__main__":
+    main()
+    
