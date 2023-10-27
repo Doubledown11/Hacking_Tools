@@ -1,0 +1,111 @@
+"""
+Hexadecimal to numeric converter by Doubledown11!
+
+Created when I was studying for my CCNA, enjoy!
+"""
+
+
+def create_dict():
+    """
+    Creates and returns the num-hex dictionary.
+    """
+
+    hex_dict = {}
+
+    for x in range(16):
+        if x == 0:
+            continue
+        elif x <= 9:
+            hex_dict[x] = str(x)
+        elif x == 10:
+            hex_dict[x] = 'A'
+        elif x == 11:
+            hex_dict[x] = 'B'
+        elif x == 12:
+            hex_dict[x] = 'C'
+        elif x == 13:
+            hex_dict[x] = 'D'
+        elif x == 14:
+            hex_dict[x] = 'E'
+        elif x == 15:
+            hex_dict[x] = 'F'
+
+    return hex_dict
+
+
+def hex2numeric_converter(hex_dict, hex_num):
+    """
+    Converts the hex into numeric form.
+    """
+
+    decimal_addr = ''
+
+    run_val = len(hex_num) - 1
+
+    hex_num_vals = []
+
+    tot = 0
+    for digit in range(len(hex_num)):
+        hex_val = 0
+        for key, value in hex_dict.items():
+            if value == hex_num[digit]:
+                hex_val += key
+                break
+        tot += (hex_val * pow(16, run_val))
+
+        run_val -=1
+
+    return tot
+
+
+def get_addr(hex_dict):
+    """
+    Receives/validates input from user.
+    """
+
+    print("Please enter a hexadecimal number below.",
+          "Enter a single hex address in at a time, with a max of 5 digits.",
+          "If you are converting a IP address in hexadecimal into dotted-decimal, please do so in separate commands.\n")
+
+    while True:
+        try:
+            hex_num = input("Enter here: ").upper()
+
+            # Test if the entered value is longer than 5 digits:
+            if len(hex_num) > 5:
+                raise Exception(f"Hex address contains too many digits. Please enter a value with max of 5 digits.")
+
+            dict_vals = []
+            for value in hex_dict.values():
+                dict_vals.append(value)
+
+            # Test if it letters outside of hex dict range:
+            for x in range(len(hex_num)):
+                if hex_num[x] not in dict_vals and hex_num[x] != ' ':
+                    raise Exception(f"Hex address contains value {hex_dict[hex_num[x]]}, that's not in the dictionary.")
+
+                else:
+                    return hex_num
+
+        except ValueError as ve:
+            print(f"Error: {ve}")
+
+
+def main():
+    """
+    Main function.
+    """
+    hex_dict = create_dict()
+
+    hex_num = get_addr(hex_dict)
+
+    converted_number = hex2numeric_converter(hex_dict, hex_num)
+
+    print('\n\n')
+
+    print(f"Your converted number is: {converted_number}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+
+if __name__ == "__main__":
+    main()
