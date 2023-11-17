@@ -1,0 +1,12 @@
+"""
+Program that writes another program to write Hello World, by DoubleDown11
+
+"""
+
+import subprocess
+
+window = subprocess.run(["python", "-c", "print('Hello, World!')"], shell=True, capture_output=True, text=True)
+
+print(window.stdout)
+
+
