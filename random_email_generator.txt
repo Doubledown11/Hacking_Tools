@@ -1,0 +1,80 @@
+"""
+Random Email Generator by DoubleDown11.
+
+A random email generator I created when I was practicing XSS on Hack the Box Academy. Thanks!
+"""
+import random
+import string
+
+
+def get_domain():
+    """Function to return top level domain choice."""
+
+    print("Please select a top level domain choice from the list below!\n")
+    domains = ['.com', '.net', '.org', '.ca', '.gov']
+
+    # Cleanses user input.
+    while True:
+        for x in range(len(domains)):
+            print(domains[x])
+        print('\n')
+        choice = input("Please enter choice here, as seen from the list above: ").lower()
+
+        if choice not in domains:
+            print("Choice invalid, please try again.")
+            print('\n\n')
+
+        else:
+            return choice
+
+
+def gen_email():
+    """Function generates and returns a string of 10 random characters."""
+
+    local_part = ''
+
+    for x in range(10):
+        local_part += random.choice(string.ascii_letters)
+
+    return local_part
+
+
+def email_service_provider():
+    """Function to return email service provider choice."""
+
+    print("Please select a top level domain choice from the list below!\n")
+    service_provider = ['gmail', 'outlook', 'hotmail', 'ualberta', 'macewan']
+
+    # Cleanses user input.
+    while True:
+        for x in range(len(service_provider)):
+            print(service_provider[x])
+        print('\n')
+        choice = input("Please enter choice here, as seen from the list above: ").lower()
+
+        if choice not in service_provider:
+            print("Choice invalid, please try again.")
+            print('\n\n')
+
+        else:
+            return choice
+
+
+def main():
+    """Main Function."""
+
+    print("Hello, welcome to the random email generator.\n")
+
+    domain = get_domain()
+
+    local_part = gen_email()
+
+    service_provider = email_service_provider()
+
+    email = local_part + "@" + service_provider + domain
+
+    print(f"Your email is {email}")
+
+
+if __name__ == "__main__":
+    main()
